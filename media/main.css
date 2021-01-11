@@ -71,6 +71,19 @@ input {
   padding: 0px 2px;
 }
 
+textarea {
+  background-color: transparent;
+  color: var(--vscode-editor-foreground);
+  border-color: transparent;
+  height: 100%;
+  width: 95%;
+  display: inline-block;
+  margin: 0px 3px;
+  padding: 0px 2px;
+  font: inherit;
+  font-size: inherit;
+}
+
 p {
   text-align: center;
 }

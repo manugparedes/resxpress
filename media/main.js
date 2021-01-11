@@ -13,6 +13,11 @@ let currentResxJS = [];
 
 	const errorContainer = document.getElementById('diverr');
 
+	function textAreaSizingEvent(){
+		this.style.height="auto";
+		this.style.height= this.scrollHeight+"px";
+	}
+
 	function inputEvent()
 	{
 		errorContainer.innerText = '';
@@ -31,8 +36,8 @@ let currentResxJS = [];
 
 			var newObj = { _attributes: { name: '', 'xml:space': 'preserve' }, value: { _text: '' } };
 			const key =  /** @type {HTMLInputElement} */ (document.getElementById(`${index}.key`));
-			const value = /** @type {HTMLInputElement} */ (document.getElementById(`${index}.value`));
-			const comment =  /** @type {HTMLInputElement} */ (document.getElementById(`${index}.comment`));
+			const value = /** @type {HTMLTextAreaElement} */ (document.getElementById(`${index}.value`));
+			const comment =  /** @type {HTMLTextAreaElement} */ (document.getElementById(`${index}.comment`));
 
 
 			console.log('if check');
@@ -92,7 +97,7 @@ let currentResxJS = [];
 			var editingObj = currentResxJS[index];
 
 			const key =  /** @type {HTMLInputElement} */ (document.getElementById(`${index}.key`));
-			const value = /** @type {HTMLInputElement} */ (document.getElementById(`${index}.value`));
+			const value = /** @type {HTMLTextAreaElement} */ (document.getElementById(`${index}.value`));
 			const comment =  /** @type {HTMLInputElement} */ (document.getElementById(`${index}.comment`));
 
 			if (key.value && value.value)//
@@ -205,24 +210,26 @@ let currentResxJS = [];
 
 			//create value td
 			const value = document.createElement("td");
-			const valueInput = /** @type {HTMLInputElement} */document.createElement('input');
+			const valueInput = /** @type {HTMLTextAreaElement } */document.createElement('textarea');
 			valueInput.id = `${index}.value`;
 			valueInput.value = ""
-			valueInput.type = 'text';
+			//valueInput.type = 'text';
 
+			//resize
+			valueInput.addEventListener('input',inputEvent,false)
 			valueInput.addEventListener('focusout', inputEvent, false)
 			value.appendChild(valueInput);
 
 			//create comment td
 			const comment = document.createElement("td");
 
-			const commentInput = document.createElement('input');
+			const commentInput = document.createElement('textarea');
 			commentInput.id = `${index}.comment`;
-			commentInput.type = 'text';
+			//commentInput.type = 'text';
 			commentInput.value = "";
 
 			commentInput.addEventListener('focusout', inputEvent, false);
-
+			commentInput.addEventListener('input', textAreaSizingEvent, false);
 			comment.appendChild(commentInput);
 
 			//delete character X
@@ -285,19 +292,20 @@ let currentResxJS = [];
 
 					//create value td
 					const value = document.createElement("td");
-					const valueInput = document.createElement('input');
+					const valueInput = document.createElement('textarea');
 					valueInput.value = node.value._text ?? ""
-					valueInput.type = 'text';
+					//valueInput.type = 'text';
 					valueInput.id = `${i}.value`;
 					console.log("Value : " + node.value._text ?? "");
+					valueInput.addEventListener('input', textAreaSizingEvent, false);
 					valueInput.addEventListener('focusout', inputEvent, false);
 					value.appendChild(valueInput);
 
 					//create comment td
 					const comment = document.createElement("td");
-					const commentInput = document.createElement('input');
+					const commentInput = document.createElement('textarea');
 					commentInput.id = `${i}.comment`;
-					commentInput.type = 'text';
+					//commentInput.type = 'text';
 					commentInput.value = node?.comment?._text ?? "";
 
 					console.log("comment : " + node?.comment?._text ?? "");
