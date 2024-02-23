@@ -8,6 +8,8 @@ import { ResxEditorProvider } from "./resxEditorProvider";
 import { NotificationService } from "./notificationService";
 import * as childProcess from "child_process";
 import { FileHelper } from "./fileHelper";
+import { resx2js } from "resx"
+import { ResxData } from "./resxData";
 
 let currentContext: vscode.ExtensionContext;
 var shouldGenerateStronglyTypedResourceClassOnSave: boolean = false
@@ -225,7 +227,7 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 					const resourceKey = element.attributes.name;
 					let valueElementParent = element.elements.filter((x: any) => x.name == "value")?.[0];
 					let value = valueElementParent?.elements?.length > 0 ? valueElementParent.elements[0].text : "";
-					
+
 					const propertyName = resourceKey.replace(/ /g, "_");
 					resourceCSharpClassText += `
 
@@ -337,10 +339,18 @@ function sortKeyValuesResx(reverse?: boolean) {
 	}
 }
 
-function getDataJs(): any[] {
+async function getDataJs(): Promise<ResxData[]> {
 	var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
-	var jsObj: any = xmljs.xml2js(text, { compact: true });
-	return jsObj.root.data;
+	var jsObj: any = await resx2js(text, true);
+	var list = new Array<ResxData>();
+
+
+	Object.entries(jsObj).forEach(([key, value]) => {
+		
+		list.push(new ResxData(key, (value as any).value, (value as any).comment));
+	});
+	
+	return list;
 }
 async function newPreview() {
 	var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
@@ -374,7 +384,7 @@ async function displayAsMarkdown() {
 				await vscode.window.showErrorMessage("Not a Resx file.");
 				return;
 			}
-			const jsonData: any[] = getDataJs();
+			const jsonData: any[] = await getDataJs();
 			if (!(jsonData instanceof Error)) {
 				var currentFileName = vscode.window.activeTextEditor?.document.fileName;
 				if (currentFileName) {
