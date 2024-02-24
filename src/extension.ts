@@ -8,7 +8,7 @@ import { ResxEditorProvider } from "./resxEditorProvider";
 import { NotificationService } from "./notificationService";
 import * as childProcess from "child_process";
 import { FileHelper } from "./fileHelper";
-import { resx2js } from "resx"
+import { ObjectOfStrings, resx2js } from "resx"
 import { ResxData } from "./resxData";
 
 let currentContext: vscode.ExtensionContext;
@@ -339,18 +339,21 @@ function sortKeyValuesResx(reverse?: boolean) {
 	}
 }
 
-async function getDataJs(): Promise<ResxData[]> {
+async function getDataJs(): Promise<Record<string, ResxData>> {
 	var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
 	var jsObj: any = await resx2js(text, true);
-	var list = new Array<ResxData>();
 
-
+	var resxKeyValues: Record<string, ResxData> = {};
+	
 	Object.entries(jsObj).forEach(([key, value]) => {
-		
-		list.push(new ResxData(key, (value as any).value, (value as any).comment));
+		let oos = value as ObjectOfStrings;
+		if (oos) {
+			let resx = new ResxData(oos.value, oos.comment ?? null);
+			resxKeyValues[key] = resx;
+		}
 	});
 	
-	return list;
+	return resxKeyValues;
 }
 async function newPreview() {
 	var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
@@ -384,7 +387,7 @@ async function displayAsMarkdown() {
 				await vscode.window.showErrorMessage("Not a Resx file.");
 				return;
 			}
-			const jsonData: any[] = await getDataJs();
+			const jsonData = await getDataJs();
 			if (!(jsonData instanceof Error)) {
 				var currentFileName = vscode.window.activeTextEditor?.document.fileName;
 				if (currentFileName) {
@@ -397,17 +400,18 @@ async function displayAsMarkdown() {
 					let fileContent = `### ${pathObj.name} Preview\n\n| Key | Value | Comment |\n`;
 					fileContent += "| --- | --- | --- |" + "\n";
 
-					for (const jsObj of jsonData) {
+					for (const key in jsonData) {
+						const resxData = jsonData[key];
 						const regexM = /[\\`*_{}[\]()#+.!|-]/g;
 						//clean up key
-						var property = jsObj._attributes.name;
+						var property = key;
 						var propertyString = property;
 
 						propertyString = property.replace(regexM, "\\$&");
 						propertyString = property.replace(/\r?\n/g, "<br/>");
 
-						var valueString = jsObj.value?._text;
-						var commentString = jsObj.comment?._text ?? "";
+						var valueString = resxData.value;
+						var commentString = resxData.comment ?? "";
 
 						valueString = valueString.replace(regexM, "\\$&");
 						valueString = valueString.replace(/\r?\n/g, "<br/>");
