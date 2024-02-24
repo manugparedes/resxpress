@@ -1,8 +1,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { getNonce } from "./util";
-import * as xmljs from "xml-js"
 import { ResxJsonHelper } from "./resxJsonHelper";
+import { ObjectOfStrings, js2resx, resx2js } from "resx";
+import { ResxData } from "./resxData";
 
 export class ResxEditor {
     private readonly context: vscode.ExtensionContext;
@@ -98,37 +99,53 @@ export class ResxEditor {
     }
 
 
-    public updateTextDocument(document: vscode.TextDocument, dataListJson: any) {
+    public async updateTextDocument(document: vscode.TextDocument, dataListJson: any) {
         console.log("updateTextDocument start");
 
         var dataList = JSON.parse(dataListJson);
         const edit = new vscode.WorkspaceEdit();
 
-        var currentJs: any = xmljs.xml2js(document.getText(), { compact: true })
-
-        console.log(`Before datalist - ${JSON.stringify(currentJs.root.data)} `);
+        const currentJsObj: any = await resx2js(document.getText(), true);
+        
+        var currentJs: Record<string, ResxData> = {};
+        
+        Object.entries(currentJsObj).forEach(([key, value]) => {
+            let oos = value as ObjectOfStrings;
+            if (value) {
+                let resx = new ResxData(oos.value, oos.comment ?? null);
+                currentJs[key] = resx;
+            }
+        });
+        
+        
+       console.log(`Before datalist - ${JSON.stringify(currentJs)} `);
 
         if (dataList) {
             switch (dataList.length) {
                 case 0:
-                    delete currentJs.root.data;
+                    delete currentJs.root;
                     break;
                 case 1:
-                    currentJs.root.data = dataList[0];
+                    currentJs.root = dataList[0];
                     break;
                 default:
-                    currentJs.root.data = dataList;
+                    currentJs.root = dataList;
                     break;
             }
         }
         else {
             console.log("Empty data : red flag");
 
-            currentJs.root.data = {};
+            //currentJs.root = {};
         }
-        console.log(`After datalist - ${JSON.stringify(currentJs.root.data)} `);
+        console.log(`After datalist - ${JSON.stringify(currentJs.root)} `);
 
-        var resx = xmljs.js2xml(currentJs, { spaces: 4, compact: true });
+        //
+        // export interface ObjectOfStrings {
+        //     [key: string]: string;
+        // }
+        let oos = { key: "" };
+        var resx = await js2resx(oos)
         console.log("Updated resx" + resx);
         edit.replace(
             document.uri,
