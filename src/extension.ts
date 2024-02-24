@@ -356,22 +356,10 @@ async function getDataJs(): Promise<Record<string, ResxData>> {
 	return resxKeyValues;
 }
 async function newPreview() {
-	var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
-	var jsObj = xmljs.xml2js(text);
-	var dataList: any = [];
-	var sorted = [];
-	jsObj.elements[0].elements.forEach((x: any) => {
-		if (x.name === "data") {
-			dataList.push(x);
-		}
-		else {
-			sorted.push(x);
-		}
-	});
-
-	var currentFileName = vscode.window.activeTextEditor?.document.fileName;
+	let jsObj = await getDataJs()
+	let currentFileName = vscode.window.activeTextEditor?.document.fileName;
 	if (currentFileName) {
-		await displayJsonInHtml(dataList, currentFileName);
+		await displayJsonInHtml(jsObj, currentFileName);
 	}
 }
 
@@ -453,27 +441,21 @@ async function displayAsMarkdown() {
 	}
 }
 
-async function displayJsonInHtml(jsonData: any[], filename: string) {
+async function displayJsonInHtml(jsonData: Record<string, ResxData>, filename: string) {
 	try {
 		var htmlContent = "";
 
-		jsonData.forEach((element) => {
-			var valueStr = "";
-			var commentstr = "";
-			element.elements.forEach((subElement: any) => {
-				if (subElement.name === "value" && subElement.elements?.length > 0) {
-					valueStr = subElement.elements[0].text;
-				}
-				else if (subElement.name === "comment" && subElement.elements?.length > 0) {
-					commentstr = subElement.elements[0].text;
-				}
-			});
+
+		for (const key in jsonData) {
+			var valueStr = jsonData[key].value;
+			var commentstr = jsonData[key].comment ?? "";
 			htmlContent += `<tr>
-				<td>${element.attributes.name}</td>
+				<td>${key}</td>
 				<td>${valueStr}</td>
 				<td>${commentstr}</td>
 			</tr>`;
-		});
+		}
+
 		var pathObj = path.parse(filename);
 		var title = pathObj.name + pathObj.ext;
 
