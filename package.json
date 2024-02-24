@@ -121,7 +121,6 @@
         "@types/node": "^18.11.18",
         "@types/resx": "^2.0.3",
         "@types/vscode": "^1.69.0",
-        "@types/xml-js": "^1.0.0",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
         "eslint": "^8.56.0",
@@ -132,7 +131,6 @@
         "typescript": "*",
         "vscode-test": "^1.5.1",
         "webpack": "^5.23.0",
-        "webpack-cli": "^5.0.1",
-        "xml-js": "^1.6.11"
+        "webpack-cli": "^5.0.1"
     }
 }
