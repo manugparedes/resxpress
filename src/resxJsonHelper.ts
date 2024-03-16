@@ -1,31 +1,22 @@
-import * as xmljs from "xml-js";
+import { ObjectOfStrings, resx2js } from "resx";
+import { ResxData } from "./resxData";
+
 export class ResxJsonHelper {
     /**
      *
      */
-    static getJsonData(text: string): any[] {
-        var jsObj: any = xmljs.xml2js(text, { compact: true });
-    
-        var dataList: any[] = [];
-        console.log(`Datalist before process :${JSON.stringify(jsObj?.root?.data)}`);
-        if (jsObj?.root?.data) {
-    
-            if (jsObj.root.data instanceof Array) {
-                dataList = dataList.concat(jsObj.root.data);
-                console.log("its array so concat 2 two arrays");
+     static async getJsonData(text: string): Promise<Record<string, ResxData>> {
+        var jsObj: any = await resx2js(text, true);
+        var resxKeyValues: Record<string, ResxData> = {};
+	
+        Object.entries(jsObj).forEach(([key, value]) => {
+            let oos = value as ObjectOfStrings;
+            if (oos) {
+                let resx = new ResxData(oos.value, oos.comment ?? null);
+                resxKeyValues[key] = resx;
             }
-            else {
-                //check if empty object
-                if (jsObj.root.data?._attributes?.name) {
-                    console.log("it is an object  so append to existing array");
-                    dataList.push(jsObj.root.data);
-                }
-            }
-        }
-    
-        console.log(`Datalist after process :${JSON.stringify(dataList)}`);
-    
-        console.log("getDataJs end ");
-        return dataList;
+        });
+        
+        return resxKeyValues;
     }
 }

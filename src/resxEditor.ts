@@ -61,15 +61,22 @@ export class ResxEditor {
     /**
      * Add a new key value back to text editor 
      */
-    public addNewKeyValue(document: vscode.TextDocument, json: any) {
+    public async addNewKeyValue(document: vscode.TextDocument, json: any) {
         var newObj = JSON.parse(json);
-        var docDataList = ResxJsonHelper.getJsonData(document.getText());
+        var docDataList = await ResxJsonHelper.getJsonData(document.getText());
 
-        var pos = docDataList.map((x) => { return x?._attributes?.name; }).indexOf(newObj._attributes.name);
+        //var pos = docDataList.map((x) => { return x?._attributes?.name; }).indexOf(newObj._attributes.name);
+        let exists = false;
+        Object(docDataList).keys.forEach((key: string) => {
+            if (key == newObj._attributes.name) {
+                exists = true;
+            }
+        });
 
         //avoid adding data with same key
-        if (pos === -1) {
-            docDataList.push(newObj);
+        if (!exists) {
+            docDataList.key = newObj._attributes.name;
+            //docDataList.value = newObj._attribut
         }
         else {
             // commented for now. its triggering twice 
@@ -81,19 +88,26 @@ export class ResxEditor {
     /**
      * Delete an existing scratch from a document.
      */
-    public deleteKeyValue(document: vscode.TextDocument, json: any) {
+    public async deleteKeyValue(document: vscode.TextDocument, json: any) {
 
         console.log("deleteKeyValue start");
 
         var deletedJsObj = JSON.parse(json);
 
-        var currentData = ResxJsonHelper.getJsonData(document.getText());
+        var currentData = await ResxJsonHelper.getJsonData(document.getText());
 
         console.log(`Datalist before deleting ${deletedJsObj._attributes.name} : ${JSON.stringify(currentData)}`);
 
-        var pos = currentData.map(function (e) { return e?._attributes?.name; }).indexOf(deletedJsObj._attributes.name);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        let exists = false;
+        //var pos = currentData.map(function (e) { return e?._attributes?.name; }).indexOf(deletedJsObj._attributes.name);
+        Object(currentData).keys.forEach((x: string) => {
+            if (x === deletedJsObj._attributes.name) {
+                exists = true;
+                delete currentData[x];
+            }});
 
-        currentData.splice(pos, 1);
+  
         console.log("deleteKeyValue end");
         return this.updateTextDocument(document, JSON.stringify(currentData));
     }
@@ -106,9 +120,9 @@ export class ResxEditor {
         const edit = new vscode.WorkspaceEdit();
 
         const currentJsObj: any = await resx2js(document.getText(), true);
-        
+
         var currentJs: Record<string, ResxData> = {};
-        
+
         Object.entries(currentJsObj).forEach(([key, value]) => {
             let oos = value as ObjectOfStrings;
             if (value) {
@@ -116,9 +130,9 @@ export class ResxEditor {
                 currentJs[key] = resx;
             }
         });
-        
-        
-       console.log(`Before datalist - ${JSON.stringify(currentJs)} `);
+
+
+        console.log(`Before datalist - ${JSON.stringify(currentJs)} `);
 
         if (dataList) {
             switch (dataList.length) {

@@ -1,3 +1,4 @@
+import { ObjectOfStrings } from "resx";
 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16,3 +17,5 @@ export class ResxData implements IResxData {
         this.comment = comment;
     }
 }
+
+export type ResxOOS = ObjectOfStrings;

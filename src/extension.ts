@@ -3,13 +3,12 @@ import * as vscode from "vscode";
 import { promises as fsPromises } from "fs";
 import { PreviewEditPanel } from "./previewEditPanel";
 import * as path from "path";
-import *  as xmljs from "xml-js";
 import { ResxEditorProvider } from "./resxEditorProvider";
 import { NotificationService } from "./notificationService";
 import * as childProcess from "child_process";
 import { FileHelper } from "./fileHelper";
-import { ObjectOfStrings, resx2js } from "resx"
-import { ResxData } from "./resxData";
+import { ObjectOfStrings, js2resx, resx2js } from "resx"
+import { ResxData, ResxOOS } from "./resxData";
 
 let currentContext: vscode.ExtensionContext;
 var shouldGenerateStronglyTypedResourceClassOnSave: boolean = false
@@ -158,7 +157,8 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 	else {
 		let documentText = FileHelper.getActiveDocumentText();
 		if (documentText != "") {
-			var jsObj = xmljs.xml2js(documentText);
+			var jsObj = await resx2js(documentText, true);
+
 			var resourceCSharpClassText = "";
 			let accessModifier = "public";
 			let workspacePath = FileHelper.getDirectory();
@@ -222,11 +222,11 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 		
 		`;
 
-			jsObj.elements[0].elements.forEach((element: any) => {
+			Object(jsObj).elements.forEach((element: ObjectOfStrings) => {
 				if (element.name === "data") {
-					const resourceKey = element.attributes.name;
-					let valueElementParent = element.elements.filter((x: any) => x.name == "value")?.[0];
-					let value = valueElementParent?.elements?.length > 0 ? valueElementParent.elements[0].text : "";
+					const resourceKey = element.key;
+					//let valueElementParent = element.elements.filter((x: any) => x.name == "value")?.[0];
+					let value = element.value;
 
 					const propertyName = resourceKey.replace(/ /g, "_");
 					resourceCSharpClassText += `
@@ -259,11 +259,11 @@ export function deactivate() { }
 
 async function sortByKeys() {
 	try {
-		let unordered: any = sortKeyValuesResx();
+		let unordered = await sortKeyValuesResx();
 
 		let editor = vscode.window.activeTextEditor;
 
-		if (editor) {
+		if (editor && unordered) {
 			let document = editor.document;
 
 			var ranger = new vscode.Range(0, 0, document.lineCount, 0);
@@ -286,44 +286,42 @@ async function sortByKeys() {
 	}
 }
 
-function sortKeyValuesResx(reverse?: boolean) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function sortKeyValuesResx(reverse?: boolean) {
 	try {
-		var text = vscode.window.activeTextEditor?.document?.getText() ?? "";
-		var jsObj = xmljs.xml2js(text);
+		const jsObj = await getDataJs();
+		for (const key in jsObj) {
+			console.log(key);
+		}
+		let keysSorted = Object.keys(jsObj).sort();
+		let sortedResx: Record<string, ResxData> = {};
 
-		var dataList: any = [];
-		var sorted: any = [];
-		jsObj.elements[0].elements.forEach((x: any) => {
-			if (x.name === "data") {
-				dataList.push(x);
-			}
-			else {
-				sorted.push(x);
-			}
+		keysSorted.forEach(x => {
+			sortedResx[x] = jsObj[x];
 		});
 
-		var dataListsorted = dataList.sort((x1: any, x2: any) => {
-			if (reverse) {
-				return x1.attributes.name > x2.attributes.name
-					? -1
-					: x1.attributes.name < x2.attributes.name
-						? 1
-						: 0;
-			} else {
-				return x1.attributes.name < x2.attributes.name
-					? -1
-					: x1.attributes.name > x2.attributes.name
-						? 1
-						: 0;
+		for (const key in sortedResx) {
+			console.log(key);
+		}
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		let oos: ResxOOS = {};
+		for (const key in sortedResx) {
+			
+			let obj: any = {};
+			obj.value = sortedResx[key].value;
+			if (typeof sortedResx[key].comment == "string") {
+				obj.comment = sortedResx[key].comment as string;
 			}
 
-		});
+			oos[key] = obj;
+		}
 
-		sorted.push(...dataListsorted);
-		jsObj.elements[0].elements = sorted;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		let options = {
+			pretty: true, indent: "\t", newline: "\n"};
 
-		var xml = xmljs.js2xml(jsObj, { spaces: 4 });
-
+		let xml = await js2resx(oos);
 		return xml;
 	}
 	catch (error) {
@@ -344,7 +342,7 @@ async function getDataJs(): Promise<Record<string, ResxData>> {
 	var jsObj: any = await resx2js(text, true);
 
 	var resxKeyValues: Record<string, ResxData> = {};
-	
+
 	Object.entries(jsObj).forEach(([key, value]) => {
 		let oos = value as ObjectOfStrings;
 		if (oos) {
@@ -352,7 +350,7 @@ async function getDataJs(): Promise<Record<string, ResxData>> {
 			resxKeyValues[key] = resx;
 		}
 	});
-	
+
 	return resxKeyValues;
 }
 async function newPreview() {
