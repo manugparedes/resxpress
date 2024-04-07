@@ -119,7 +119,7 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 		nameSpace = path.basename(path.dirname(fileName));
 	}
 
-	if (process.platform != "win32") {
+	if (process.platform !== "win32") {
 
 		var ext = "cs";
 
@@ -155,7 +155,7 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 	}
 	else {
 		let documentText = FileHelper.getActiveDocumentText();
-		if (documentText != "") {
+		if (documentText !== "") {
 			var jsObj = xmljs.xml2js(documentText);
 			var resourceCSharpClassText = "";
 			let accessModifier = "public";
@@ -223,7 +223,7 @@ export async function runResGenAsync(fileName: string): Promise<void> {
 			jsObj.elements[0].elements.forEach((element: any) => {
 				if (element.name === "data") {
 					const resourceKey = element.attributes.name;
-					let valueElementParent = element.elements.filter((x: any) => x.name == "value")?.[0];
+					let valueElementParent = element.elements.filter((x: any) => x.name === "value")?.[0];
 					let value = valueElementParent?.elements?.length > 0 ? valueElementParent.elements[0].text : "";
 					
 					const propertyName = resourceKey.replace(/ /g, "_");

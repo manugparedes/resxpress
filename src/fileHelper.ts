@@ -30,7 +30,7 @@ export class FileHelper {
     }
 
     public static async writeToFile(filePath: string, text: string) {
-        if (filePath != "") {
+        if (filePath !== "") {
             await writeFile(filePath, text);
         }
     }
@@ -39,16 +39,16 @@ export class FileHelper {
         try {
             let fileName = FileHelper.getFileName();
             var namespace = "Unknown";
-            if (fileName != null && fileName != "") {
+            if (fileName !== null && fileName !== "") {
                 let fileUrls = await vscode.workspace.findFiles(`**/${fileName}.Designer.cs`, null, 1);
                 
 
                 if (fileUrls.length > 0) {
                     const fileContent = readFileSync(fileUrls[0].fsPath, "utf-8");
 
-                    if (fileContent && fileContent != "") {
+                    if (fileContent && fileContent !== "") {
                         var lines = fileContent.split("\r\n");
-                        if (lines.length == 1) {
+                        if (lines.length === 1) {
                             lines = fileContent.split("\n");
                         }
                         var newLines = lines.filter(x => x.startsWith("namespace ")).map(x => x.trim().replace("namespace ", "").replace(" ", "").replace("{", ""));
